@@ -1,0 +1,11 @@
+name: 'PyPI Package Health Check'
+description: 'Check popularity, maintenance, and license issues for PyPI packages based on requirements.txt'
+author: 'Your Name'
+inputs:
+  package_list_path:
+    description: 'Path to the requirements.txt file'
+    required: true
+    default: 'requirements.txt'
+runs:
+  using: 'node16'
+  main: 'index.js'
