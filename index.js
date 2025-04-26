@@ -31,6 +31,8 @@ const MAX_OPEN_ISSUES_LARGE = 500;
     for (const pkg of packages) {
       console.log(`\n🔍 패키지 점검 중: ${pkg}`);
 
+      let downloads = 0;   // ✅ 여기서 전역 선언
+
       const pypiInfo = await axios.get(`https://pypi.org/pypi/${pkg}/json`);
       const info = pypiInfo.data.info;
 
@@ -38,7 +40,7 @@ const MAX_OPEN_ISSUES_LARGE = 500;
       let popular = false;
       try {
         const res = await axios.get(`https://pypistats.org/api/packages/${pkg}/recent`);
-        const downloads = res.data.data.last_month;
+        downloads = res.data.data.last_month;
         console.log(`📈 지난 한 달 다운로드 수: ${downloads}회`);
         if (downloads >= MIN_DOWNLOADS) popular = true;
       } catch {
@@ -98,6 +100,8 @@ const MAX_OPEN_ISSUES_LARGE = 500;
               hasIssue = true;
             }
           }
+        } else {
+          console.log(`⚠️ GitHub 저장소 URL 형식이 올바르지 않습니다.`);
         }
       } else {
         console.log(`⚠️ GitHub 저장소를 찾을 수 없어 유지보수 점검은 생략됩니다.`);
