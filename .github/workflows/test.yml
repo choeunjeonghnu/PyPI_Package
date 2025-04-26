@@ -2,7 +2,10 @@ name: PyPI 패키지 건전성 점검
 
 on:
   workflow_dispatch:  # 수동 실행용 (버튼 클릭해서 실행)
-
+  
+env:
+  ACTIONS_STEP_DEBUG: false   # 디버깅 로그 차단
+  
 jobs:
   health-check:
     runs-on: ubuntu-latest
