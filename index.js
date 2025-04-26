@@ -60,7 +60,8 @@ const MIN_FORKS = 100;
       }
 
       const repoName = repoMatch[1];
-      const octokit = github.getOctokit(process.env.GITHUB_TOKEN);
+      const token = process.env.GITHUB_TOKEN || core.getInput('token');
+      const octokit = github.getOctokit(token);
 
       // 5️⃣ [인기도 보완] GitHub 스타 & 포크 수 확인
       const { data: repoData } = await octokit.rest.repos.get({
