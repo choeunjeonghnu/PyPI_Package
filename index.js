@@ -31,7 +31,7 @@ const MAX_OPEN_ISSUES_LARGE = 500;
     for (const pkg of packages) {
       console.log(`\n🔍 패키지 점검 중: ${pkg}`);
 
-      let downloads = 0;   // ✅ 여기서 전역 선언
+      let downloads = 0;
 
       const pypiInfo = await axios.get(`https://pypi.org/pypi/${pkg}/json`);
       const info = pypiInfo.data.info;
@@ -66,7 +66,11 @@ const MAX_OPEN_ISSUES_LARGE = 500;
             owner: repoName.split('/')[0],
             repo: repoName.split('/')[1],
           });
-          repoData = data;
+          repoData = {
+            stargazers_count: data.stargazers_count,
+            forks_count: data.forks_count,
+            pushed_at: data.pushed_at
+          };  // ✅ 라이선스 데이터 제외!
 
           console.log(`⭐ 스타: ${repoData.stargazers_count}개, 🍴 포크: ${repoData.forks_count}개`);
 
@@ -116,16 +120,18 @@ const MAX_OPEN_ISSUES_LARGE = 500;
       }
 
       // === 라이선스 점검 (PyPI ONLY) ===
-      let license = info.license?.trim() || '';
+      let license = '';
 
-      if (!license || license.toUpperCase() === 'UNKNOWN') {
-        if (info.classifiers) {
-          const licenses = info.classifiers.filter(c => c.startsWith('License ::'));
-          if (licenses.length > 0) {
-            const lastClassifier = licenses[licenses.length - 1];
-            license = lastClassifier.split('::').pop().trim();
-          }
+      if (info.classifiers) {
+        const licenses = info.classifiers.filter(c => c.startsWith('License ::'));
+        if (licenses.length > 0) {
+          const lastClassifier = licenses[licenses.length - 1];
+          license = lastClassifier.split('::').pop().trim();
         }
+      }
+
+      if (!license) {
+        license = info.license?.trim() || '';
       }
 
       console.log(`📜 라이선스: ${license || '정보 없음'}`);
@@ -133,7 +139,7 @@ const MAX_OPEN_ISSUES_LARGE = 500;
       if (!license) {
         console.log(`⚠️ [라이선스] 라이선스 정보가 부족합니다.`);
         hasIssue = true;
-      } else if (bannedLicenses.some(bad => license.includes(bad))) {
+      } else if (bannedLicenses.some(bad => license.toUpperCase().includes(bad))) {
         console.log(`❌ [라이선스] 금지된 라이선스가 포함되어 있습니다.`);
         hasIssue = true;
       } else {
