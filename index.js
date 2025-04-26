@@ -129,16 +129,17 @@ const MAX_OPEN_ISSUES_LARGE = 500;
         }
       }
 
-      // 2️⃣ 그래도 없으면 GitHub spdx_id 사용
+      // 2️⃣ 그래도 없으면 GitHub spdx_id 사용 (객체 출력 방지)
       if ((!license || license === 'UNKNOWN') && repoData && repoData.license) {
-        if (repoData.license.spdx_id && repoData.license.spdx_id !== 'NOASSERTION') {
-          license = repoData.license.spdx_id;
+        if (typeof repoData.license.spdx_id === 'string' && repoData.license.spdx_id !== 'NOASSERTION') {
+          license = repoData.license.spdx_id.trim();
         } else {
           license = '정보 없음';
         }
       }
 
-      console.log(`📜 라이선스: ${license}`);
+      // ✅ 무조건 문자열로 출력
+      console.log(`📜 라이선스: ${String(license)}`);
 
       if (!license || license === '정보 없음') {
         console.log(`⚠️ [라이선스] 라이선스 정보가 부족합니다.`);
