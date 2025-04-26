@@ -118,27 +118,29 @@ const MAX_OPEN_ISSUES_LARGE = 500;
         console.log(`✅ [인기도] 널리 사용되는 패키지입니다.`);
       }
 
-      // === 라이선스 점검 ===
+      // === 라이선스 점검 (정확한 파싱) ===
       let license = info.license?.trim() || '';
 
-      // 1️⃣ PyPI classifiers에서 라이선스 탐색
-      if ((!license || license === 'UNKNOWN') && info.classifiers) {
-        const licenseClassifier = info.classifiers.find(c => c.startsWith('License ::'));
-        if (licenseClassifier) {
-          license = licenseClassifier.replace('License ::', '').trim();
+      if (!license || license.toUpperCase() === 'UNKNOWN') {
+        if (info.classifiers) {
+          const licenses = info.classifiers.filter(c => c.startsWith('License ::'));
+          if (licenses.length > 0) {
+            const lastClassifier = licenses[licenses.length - 1];
+            license = lastClassifier.split('::').pop().trim();
+          }
         }
       }
 
-      // 2️⃣ 그래도 없으면 GitHub spdx_id 사용 (객체 출력 방지)
+      // 최후의 보완: GitHub spdx_id
       if ((!license || license === 'UNKNOWN') && repoData && repoData.license) {
-        if (typeof repoData.license.spdx_id === 'string' && repoData.license.spdx_id !== 'NOASSERTION') {
-          license = repoData.license.spdx_id.trim();
+        const spdx = repoData.license.spdx_id;
+        if (typeof spdx === 'string' && spdx !== 'NOASSERTION') {
+          license = spdx.trim();
         } else {
           license = '정보 없음';
         }
       }
 
-      // ✅ 무조건 문자열로 출력
       console.log(`📜 라이선스: ${String(license)}`);
 
       if (!license || license === '정보 없음') {
