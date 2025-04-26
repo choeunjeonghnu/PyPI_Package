@@ -121,20 +121,26 @@ const MAX_OPEN_ISSUES_LARGE = 500;
       // === 라이선스 점검 ===
       let license = info.license?.trim() || '';
 
-      if (!license && info.classifiers) {
+      // 1️⃣ PyPI classifiers에서 라이선스 탐색
+      if ((!license || license === 'UNKNOWN') && info.classifiers) {
         const licenseClassifier = info.classifiers.find(c => c.startsWith('License ::'));
         if (licenseClassifier) {
           license = licenseClassifier.replace('License ::', '').trim();
         }
       }
 
-      if (!license && repoData && repoData.license) {
-        license = repoData.license.spdx_id;
+      // 2️⃣ 그래도 없으면 GitHub spdx_id 사용
+      if ((!license || license === 'UNKNOWN') && repoData && repoData.license) {
+        if (repoData.license.spdx_id && repoData.license.spdx_id !== 'NOASSERTION') {
+          license = repoData.license.spdx_id;
+        } else {
+          license = '정보 없음';
+        }
       }
 
-      console.log(`📜 라이선스: ${license || '정보 없음'}`);
+      console.log(`📜 라이선스: ${license}`);
 
-      if (!license) {
+      if (!license || license === '정보 없음') {
         console.log(`⚠️ [라이선스] 라이선스 정보가 부족합니다.`);
         hasIssue = true;
       } else if (bannedLicenses.some(bad => license.includes(bad))) {
