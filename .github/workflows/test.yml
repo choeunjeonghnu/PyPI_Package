@@ -1,0 +1,17 @@
+name: PyPI 패키지 건전성 점검
+
+on:
+  workflow_dispatch:  # 수동 실행용 (버튼 클릭해서 실행)
+
+jobs:
+  health-check:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 리포지토리 체크아웃
+        uses: actions/checkout@v3
+
+      - name: PyPI 패키지 건전성 점검 실행
+        uses: ./  # 현재 리포지토리에 있는 Action 사용
+        with:
+          package_list_path: 'requirements.txt'
