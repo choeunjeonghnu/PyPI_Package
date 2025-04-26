@@ -3,10 +3,8 @@ const github = require('@actions/github');
 const axios = require('axios');
 const fs = require('fs');
 
-// 🚫 금지 라이선스 목록
 const bannedLicenses = ['GPL', 'AGPL', 'LGPL', 'SSPL', 'CC', 'Sleepycat'];
 
-// 기준 설정
 const MIN_DOWNLOADS = 10000;
 const MIN_STARS = 1000;
 const MIN_FORKS = 100;
@@ -33,16 +31,14 @@ const MAX_OPEN_ISSUES_LARGE = 500;
     for (const pkg of packages) {
       console.log(`\n🔍 패키지 점검 중: ${pkg}`);
 
-      // === PyPI 메타데이터 조회 ===
       const pypiInfo = await axios.get(`https://pypi.org/pypi/${pkg}/json`);
       const info = pypiInfo.data.info;
 
       // === 인기도 점검 ===
       let popular = false;
-      let downloads = 0;
       try {
         const res = await axios.get(`https://pypistats.org/api/packages/${pkg}/recent`);
-        downloads = res.data.data.last_month;
+        const downloads = res.data.data.last_month;
         console.log(`📈 지난 한 달 다운로드 수: ${downloads}회`);
         if (downloads >= MIN_DOWNLOADS) popular = true;
       } catch {
@@ -76,7 +72,6 @@ const MAX_OPEN_ISSUES_LARGE = 500;
             popular = true;
           }
 
-          // === 유지보수 점검 ===
           const lastPushed = new Date(repoData.pushed_at);
           const monthsSinceUpdate = (Date.now() - lastPushed) / (1000 * 60 * 60 * 24 * 30);
 
@@ -103,8 +98,6 @@ const MAX_OPEN_ISSUES_LARGE = 500;
               hasIssue = true;
             }
           }
-        } else {
-          console.log(`⚠️ GitHub 저장소 URL 형식이 올바르지 않습니다.`);
         }
       } else {
         console.log(`⚠️ GitHub 저장소를 찾을 수 없어 유지보수 점검은 생략됩니다.`);
@@ -118,7 +111,7 @@ const MAX_OPEN_ISSUES_LARGE = 500;
         console.log(`✅ [인기도] 널리 사용되는 패키지입니다.`);
       }
 
-      // === 라이선스 점검 (정확한 파싱) ===
+      // === 라이선스 점검 (PyPI ONLY) ===
       let license = info.license?.trim() || '';
 
       if (!license || license.toUpperCase() === 'UNKNOWN') {
@@ -131,19 +124,9 @@ const MAX_OPEN_ISSUES_LARGE = 500;
         }
       }
 
-      // 최후의 보완: GitHub spdx_id
-      if ((!license || license === 'UNKNOWN') && repoData && repoData.license) {
-        const spdx = repoData.license.spdx_id;
-        if (typeof spdx === 'string' && spdx !== 'NOASSERTION') {
-          license = spdx.trim();
-        } else {
-          license = '정보 없음';
-        }
-      }
+      console.log(`📜 라이선스: ${license || '정보 없음'}`);
 
-      console.log(`📜 라이선스: ${String(license)}`);
-
-      if (!license || license === '정보 없음') {
+      if (!license) {
         console.log(`⚠️ [라이선스] 라이선스 정보가 부족합니다.`);
         hasIssue = true;
       } else if (bannedLicenses.some(bad => license.includes(bad))) {
