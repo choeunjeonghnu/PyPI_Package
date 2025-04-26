@@ -1,4 +1,4 @@
-name: PyPI 패키지 건전성 점검
+name: PyPI 패키지 건전성 점검!
 
 on:
   workflow_dispatch:  # 수동 실행용 (버튼 클릭해서 실행)
