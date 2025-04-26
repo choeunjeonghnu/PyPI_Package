@@ -6,6 +6,10 @@ inputs:
     description: 'Path to the requirements.txt file'
     required: true
     default: 'requirements.txt'
+  token:
+    description: 'GitHub Token for API authentication'
+    required: false
+    default: '${{ github.token }}'
 runs:
   using: 'node16'
   main: 'index.js'
