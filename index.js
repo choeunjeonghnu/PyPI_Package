@@ -18,14 +18,7 @@ const MAX_OPEN_ISSUES_LARGE = 500;
     const packageListPath = core.getInput('package_list_path');
     const token = process.env.GITHUB_TOKEN || core.getInput('token');
 
-    const octokit = github.getOctokit(token, {
-      log: {
-        debug: () => {},
-        info: () => {},
-        warn: () => {},
-        error: () => {}   // 모든 로그 무력화
-      }
-    });
+    const octokit = github.getOctokit(token);
 
     const graphqlWithAuth = graphql.defaults({
       headers: { authorization: `token ${token}` }
