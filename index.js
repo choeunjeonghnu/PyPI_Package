@@ -17,7 +17,13 @@ const MAX_OPEN_ISSUES_LARGE = 500;
     const packageListPath = core.getInput('package_list_path');
     const token = process.env.GITHUB_TOKEN || core.getInput('token');
     const octokit = github.getOctokit(token, {
-      log: { debug: () => {}, info: () => {}, warn: () => {}, error: console.error }
+      log: { debug: () => {}, info: () => {}, warn: () => {}, error: () => {} },  // error도 무력화
+      request: {
+        fetch: (url, options) => {
+          options.headers['X-GitHub-Log-Level'] = 'silent';
+          return require('node-fetch')(url, options);
+        }
+      }
     });
 
     const content = fs.readFileSync(packageListPath, 'utf-8');
