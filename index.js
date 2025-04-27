@@ -1,5 +1,6 @@
 const core = require('@actions/core');
 const github = require('@actions/github');
+const { graphql } = require('@octokit/graphql');   // ✅ GraphQL 추가
 const axios = require('axios');
 const fs = require('fs');
 
@@ -16,13 +17,18 @@ const MAX_OPEN_ISSUES_LARGE = 500;
   try {
     const packageListPath = core.getInput('package_list_path');
     const token = process.env.GITHUB_TOKEN || core.getInput('token');
+
     const octokit = github.getOctokit(token, {
       log: {
         debug: () => {},
         info: () => {},
         warn: () => {},
-        error: () => {}  
-        }
+        error: () => {}   // 모든 로그 무력화
+      }
+    });
+
+    const graphqlWithAuth = graphql.defaults({
+      headers: { authorization: `token ${token}` }
     });
 
     const content = fs.readFileSync(packageListPath, 'utf-8');
@@ -66,16 +72,14 @@ const MAX_OPEN_ISSUES_LARGE = 500;
         const repoMatch = githubUrl.match(/github\.com\/([^/]+\/[^/]+)/);
         if (repoMatch) {
           const repoName = repoMatch[1];
+          const [owner, repo] = repoName.split('/');
 
-          const { data } = await octokit.rest.repos.get({
-            owner: repoName.split('/')[0],
-            repo: repoName.split('/')[1],
-          });
+          const { data } = await octokit.rest.repos.get({ owner, repo });
           repoData = {
             stargazers_count: data.stargazers_count,
             forks_count: data.forks_count,
             pushed_at: data.pushed_at
-          };  // ✅ 라이선스 데이터 제외!
+          };
 
           console.log(`⭐ 스타: ${repoData.stargazers_count}개, 🍴 포크: ${repoData.forks_count}개`);
 
@@ -93,11 +97,26 @@ const MAX_OPEN_ISSUES_LARGE = 500;
             console.log(`✅ [유지보수] 최근 업데이트 양호`);
           }
 
-          const searchResult = await octokit.rest.search.issuesAndPullRequests({
-            q: `repo:${repoName} is:issue is:open`,
-          });
-          const openIssues = searchResult.data.total_count;
-          console.log(`🐞 열린 이슈 수: ${openIssues}개`);
+          // === 열린 이슈 수 조회 (GraphQL)
+          const query = `
+            query {
+              repository(owner: "${owner}", name: "${repo}") {
+                issues(states: OPEN) {
+                  totalCount
+                }
+              }
+            }
+          `;
+
+          let openIssues = 0;
+          try {
+            const result = await graphqlWithAuth(query);
+            openIssues = result.repository.issues.totalCount;
+            console.log(`🐞 열린 이슈 수: ${openIssues}개`);
+          } catch (err) {
+            console.log(`⚠️ 이슈 수 조회 실패: ${err.message}`);
+            hasIssue = true;
+          }
 
           if (downloads >= LARGE_PROJECT_DOWNLOADS) {
             if (openIssues > MAX_OPEN_ISSUES_LARGE) {
